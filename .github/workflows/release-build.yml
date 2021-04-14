@@ -1,0 +1,62 @@
+name: CMake
+
+on: [push]
+
+env:
+  # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
+  BUILD_TYPE: Release
+  MY_INSTALL_DIR: ${{github.workspace}}/install
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    
+    - name: Init Submodules
+      run: git submodule update --init
+
+    - name: Create Build Environment
+      # Some projects don't allow in-source building, so create a separate build directory
+      # We'll use this as our working directory for all subsequent commands
+      run: cmake -E make_directory ${{github.workspace}}/cmake-build
+
+    - name: Configure CMake
+      # Use a bash shell so we can use the same syntax for environment variable
+      # access regardless of the host operating system
+      shell: bash
+      working-directory: ${{github.workspace}}/cmake-build
+      run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DgRPC_INSTALL=ON -DgRPC_BUILD_TESTS=OFF -DCMAKE_INSTALL_PREFIX=$MY_INSTALL_DIR
+
+    - name: Build
+      working-directory: ${{github.workspace}}/cmake-build
+      shell: bash
+      # Execute the build.  You can specify a specific target with "--target <NAME>"
+      run: cmake --build . --config $BUILD_TYPE
+      
+    - name: Install
+      working-directory: ${{github.workspace}}/cmake-build
+      shell: bash
+      # Execute the build.  You can specify a specific target with "--target <NAME>"
+      run: cmake --install .
+      
+    - name: Copy Installation  
+      working-directory: ${{github.workspace}}/
+      shell: bash
+      run: cp -r $MY_INSTALL_DIR grpc-release-windows-x64
+      
+    - name: Creating Installation Archive   
+      working-directory: ${{github.workspace}}/
+      shell: pwsh
+      run: 7z a -tzip grpc-release-windows-x64.zip grpc-release-windows-x64/
+      
+    - name: Upload a Build Artifact
+      uses: actions/upload-artifact@v2.2.3
+      with:
+        # Artifact name
+        name: grpc-release-windows-x64
+        # A file, directory or wildcard pattern that describes what to upload
+        path: ${{github.workspace}}/grpc-release-windows-x64.zip
+      
+
