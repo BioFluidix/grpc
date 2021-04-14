@@ -40,4 +40,23 @@ jobs:
       shell: bash
       # Execute the build.  You can specify a specific target with "--target <NAME>"
       run: cmake --install .
+      
+    - name: Copy Installation  
+      working-directory: ${{github.workspace}}/
+      shell: bash
+      run: cp -r $MY_INSTALL_DIR grpc-release-windows-x64
+      
+    - name: Creating Installation Archive   
+      working-directory: ${{github.workspace}}/
+      shell: pwsh
+      run: 7za a -tzip grpc-release-windows-x64.zip grpc-release-windows-x64/
+      
+    - name: Upload a Build Artifact
+      uses: actions/upload-artifact@v2.2.3
+      with:
+        # Artifact name
+        name: grpc-release-windows-x64
+        # A file, directory or wildcard pattern that describes what to upload
+        path: ${{github.workspace}}/grpc-release-windows-x64.zip
+      
 
